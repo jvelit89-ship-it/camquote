@@ -22,6 +22,7 @@
       "@/*": ["./src/*"]
     }
   },
+    "exclude": ["scripts"],
   "include": [
     "next-env.d.ts",
     "**/*.ts",
