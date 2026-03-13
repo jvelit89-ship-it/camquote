@@ -43,7 +43,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   // Duplicar items
   const items = db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).all();
-  items.forEach((item) => {
+  items.forEach((item: any) => {
     db.insert(quotationItems).values({
       ...item,
       id: uuid(),
