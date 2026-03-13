@@ -145,7 +145,7 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {stats.recentQuotations.map((q) => (
+                  {stats.recentQuotations.map((q: any) => (
                     <tr key={q.id} className="group hover:bg-blue-50/30 transition-all">
                       <td className="py-4">
                         <Link href={`/quotations/${q.id}`} className="text-blue-600 font-bold hover:text-blue-700">
