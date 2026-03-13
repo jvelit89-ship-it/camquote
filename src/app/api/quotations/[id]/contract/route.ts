@@ -165,9 +165,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const primaryColor = company?.primaryColor || "#1a1a2e";
   
   // Try counting cameras from items
-  const cameraCount = items.filter(i => i.productName.toLowerCase().includes('camara') || i.productName.toLowerCase().includes('cámara')).reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || "______";
-  const dvrInfo = items.find(i => i.productName.toLowerCase().includes('dvr') || i.productName.toLowerCase().includes('nvr'))?.productName || "______ canales";
-  const hddInfo = items.find(i => i.productName.toLowerCase().includes('disco'))?.productName || "______ TB";
+  const cameraCount = items.filter((i: any) => i.productName.toLowerCase().includes('camara') || i.productName.toLowerCase().includes('cámara')).reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || "______";
+  const dvrInfo = items.find((i: any) => i.productName.toLowerCase().includes('dvr') || i.productName.toLowerCase().includes('nvr'))?.productName || "______ canales";
+  const hddInfo = items.find((i: any) => i.productName.toLowerCase().includes('disco'))?.productName || "______ TB";
 
   let cameraLocations = [];
   try { cameraLocations = JSON.parse(contract.cameraLocations || "[]"); } catch (e) {}
