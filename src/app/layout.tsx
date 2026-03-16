@@ -18,19 +18,23 @@ export default async function RootLayout({
 }>) {
   const user = await getAuthUser();
   // Global Settings for AdSense
-  const sysSettings = db.select().from(globalSettings).where(eq(globalSettings.id, "current")).get();
+  const sysSettingsResult = await db.select().from(globalSettings).where(eq(globalSettings.id, "current"));
+  const sysSettings = sysSettingsResult[0];
   const adsenseId = sysSettings?.googleAdsenseId || "ca-pub-1749527650458388";
 
   let company = undefined;
   let tenant = null;
   if (user?.tenantId) {
-    tenant = db.select().from(tenants).where(eq(tenants.id, user.tenantId)).get();
-    company = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+    const tenantResult = await db.select().from(tenants).where(eq(tenants.id, user.tenantId));
+    tenant = tenantResult[0];
+    const companyResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    company = companyResult[0];
   } else {
-    company = db.select().from(companySettings).get();
+    const companyResult = await db.select().from(companySettings);
+    company = companyResult[0];
   }
 
-  const showAds = !tenant || tenant.planId === "free"; // Default to show ads if no tenant or free plan
+  const showAds = false; // Disable temporarily to fix click issue
 
   const primaryColor = company?.primaryColor || "#1a1a2e";
   const secondaryColor = company?.secondaryColor || "#6b7280";
