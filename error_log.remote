@@ -1,0 +1,12 @@
+[16-Mar-2026 01:04:27 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user ''@'localhost' (using password: NO) in /home3/camquote/public_html/check-db.php:11
+Stack trace:
+#0 /home3/camquote/public_html/check-db.php(11): mysqli_real_connect(Object(mysqli), 'localhost', NULL, Object(SensitiveParameterValue), NULL, 3306)
+#1 /home3/camquote/public_html/check-db.php(23): test_conn('localhost')
+#2 {main}
+  thrown in /home3/camquote/public_html/check-db.php on line 11
+[16-Mar-2026 01:04:37 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Access denied for user ''@'localhost' (using password: NO) in /home3/camquote/public_html/check-db.php:11
+Stack trace:
+#0 /home3/camquote/public_html/check-db.php(11): mysqli_real_connect(Object(mysqli), 'localhost', NULL, Object(SensitiveParameterValue), NULL, 3306)
+#1 /home3/camquote/public_html/check-db.php(23): test_conn('localhost')
+#2 {main}
+  thrown in /home3/camquote/public_html/check-db.php on line 11

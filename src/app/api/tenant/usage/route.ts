@@ -15,24 +15,27 @@ export async function GET() {
     const limits = await getTenantLimits(user.tenantId);
 
     // 1. Contar Usuarios
-    const usersCount = db.select({ value: count() }).from(users).where(eq(users.tenantId, user.tenantId)).get();
+    const usersCountResult = await db.select({ value: count() }).from(users).where(eq(users.tenantId, user.tenantId));
+    const usersCount = usersCountResult[0];
 
     // 2. Contar Productos (activos)
-    const productsCount = db.select({ value: count() }).from(products).where(
+    const productsCountResult = await db.select({ value: count() }).from(products).where(
       and(eq(products.tenantId, user.tenantId), eq(products.isDeleted, 0))
-    ).get();
+    );
+    const productsCount = productsCountResult[0];
 
     // 3. Contar Cotizaciones (mes actual)
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    const quotationsCount = db.select({ value: count() }).from(quotations).where(
+    const quotationsCountResult = await db.select({ value: count() }).from(quotations).where(
       and(
         eq(quotations.tenantId, user.tenantId), 
         eq(quotations.isDeleted, 0),
-        gte(quotations.createdAt, startOfMonth.toISOString())
+        gte(quotations.createdAt, startOfMonth as any)
       )
-    ).get();
+    );
+    const quotationsCount = quotationsCountResult[0];
 
     return NextResponse.json({
       data: {

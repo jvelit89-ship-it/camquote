@@ -18,6 +18,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: { code: "VALIDATION_ERROR", message: "Estado inválido" } }, { status: 400 });
   }
 
-  db.update(quotations).set({ status, updatedAt: new Date().toISOString() }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).run();
+  await db.update(quotations).set({ status, updatedAt: new Date() }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
   return NextResponse.json({ success: true });
 }

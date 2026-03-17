@@ -18,11 +18,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const { id } = await params;
 
-    let quotation = db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).get();
+    let quotationResult = await db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
+    let quotation = quotationResult[0];
     
     // Fallback if id is actually a quotationNumber
     if (!quotation) {
-      quotation = db.select().from(quotations).where(and(eq(quotations.quotationNumber, id), eq(quotations.tenantId, user.tenantId))).get();
+      quotationResult = await db.select().from(quotations).where(and(eq(quotations.quotationNumber, id), eq(quotations.tenantId, user.tenantId)));
+      quotation = quotationResult[0];
     }
 
     if (!quotation || quotation.isDeleted === 1) {
@@ -44,23 +46,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       credentials: customCreds
     } = body;
 
-    const client = db.select().from(clients).where(eq(clients.id, quotation.clientId)).get();
+    const clientResult = await db.select().from(clients).where(eq(clients.id, quotation.clientId));
+    const client = clientResult[0];
     
     // Default splits (70% advance if not provided)
     const advanceAmount = customAdvance !== undefined ? Number(customAdvance) : (quotation.total || 0) * 0.7;
     const balanceAmount = (quotation.total || 0) - advanceAmount;
 
     // Always update quotation status to 'approved'
-    db.update(quotations)
-      .set({ status: "approved", updatedAt: new Date().toISOString() })
-      .where(eq(quotations.id, quotationId))
-      .run();
+    await db.update(quotations)
+      .set({ status: "approved", updatedAt: new Date() })
+      .where(eq(quotations.id, quotationId));
 
     // Check if contract already exists to update instead of insert
-    const existing = db.select().from(contracts).where(and(eq(contracts.quotationId, quotationId), eq(contracts.isDeleted, 0))).get();
+    const existingResult = await db.select().from(contracts).where(and(eq(contracts.quotationId, quotationId), eq(contracts.isDeleted, 0)));
+    const existing = existingResult[0];
     
     if (existing) {
-      db.update(contracts)
+      await db.update(contracts)
         .set({
           installationAddress: customAddress || existing.installationAddress,
           advanceAmount,
@@ -71,10 +74,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           maintenanceCost: customMaintenance || existing.maintenanceCost,
           cameraLocations: customLocations ? JSON.stringify(customLocations) : existing.cameraLocations,
           credentials: customCreds ? JSON.stringify(customCreds) : existing.credentials,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date()
         })
-        .where(eq(contracts.id, existing.id))
-        .run();
+        .where(eq(contracts.id, existing.id));
 
       return NextResponse.json({ data: { ...existing, advanceAmount, balanceAmount } });
     }
@@ -102,27 +104,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }),
       status: "draft",
       isDeleted: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    db.insert(contracts).values(newContract).run();
+    await db.insert(contracts).values(newContract as any);
 
     // Create the first receipt if advanceAmount > 0
     if (advanceAmount > 0) {
       const receiptId = crypto.randomUUID();
       const receiptNumber = `REC-${quotation.quotationNumber.split('-')[1] || Date.now().toString().slice(-4)}`;
       
-      db.insert(receipts).values({
+      await db.insert(receipts).values({
         id: receiptId,
         tenantId: user.tenantId,
         contractId,
         receiptNumber,
         amount: advanceAmount,
         concept: "Adelanto",
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      }).run();
+        date: new Date(),
+        createdAt: new Date()
+      } as any);
     }
 
     return NextResponse.json({ data: newContract });
@@ -141,10 +143,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
 
-  let quotation = db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).get();
+  let quotationResult = await db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
+  let quotation = quotationResult[0];
   
   if (!quotation) {
-    quotation = db.select().from(quotations).where(and(eq(quotations.quotationNumber, id), eq(quotations.tenantId, user.tenantId))).get();
+    quotationResult = await db.select().from(quotations).where(and(eq(quotations.quotationNumber, id), eq(quotations.tenantId, user.tenantId)));
+    quotation = quotationResult[0];
   }
 
   if (!quotation || quotation.isDeleted === 1) {
@@ -153,14 +157,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const quotationId = quotation.id;
 
-  const contract = db.select().from(contracts).where(and(eq(contracts.quotationId, quotationId), eq(contracts.isDeleted, 0))).get();
+  const contractResult = await db.select().from(contracts).where(and(eq(contracts.quotationId, quotationId), eq(contracts.isDeleted, 0)));
+  const contract = contractResult[0];
   if (!contract) {
     return NextResponse.json({ error: { message: "Contrato no generado" } }, { status: 404 });
   }
 
-  const items = db.select().from(quotationItems).where(eq(quotationItems.quotationId, quotationId)).orderBy(quotationItems.sortOrder).all();
-  const client = db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId))).get();
-  const company = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+  const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, quotationId)).orderBy(quotationItems.sortOrder);
+  const clientResult = await db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId)));
+  const client = clientResult[0];
+  const companyResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+  const company = companyResult[0];
 
   const primaryColor = company?.primaryColor || "#1a1a2e";
   

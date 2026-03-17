@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const allTenants = db
+    const allTenants = await db
       .select({
         id: tenants.id,
         companyName: tenants.companyName,
@@ -27,8 +27,7 @@ export async function GET(req: NextRequest) {
       .from(tenants)
       .leftJoin(users, eq(tenants.ownerUserId, users.id))
       .orderBy(sql`${tenants.createdAt} DESC`)
-      .limit(limit)
-      .all();
+      .limit(limit);
 
     return NextResponse.json(
       { data: allTenants },

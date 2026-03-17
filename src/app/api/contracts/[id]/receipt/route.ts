@@ -20,9 +20,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const receiptId = url.searchParams.get("receiptId");
 
   // Search for contract by ID or contractNumber
-  let contract = db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.tenantId, user.tenantId))).get();
+  const contractResult = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.tenantId, user.tenantId)));
+  let contract = contractResult[0];
   if (!contract) {
-    contract = db.select().from(contracts).where(and(eq(contracts.contractNumber, id), eq(contracts.tenantId, user.tenantId))).get();
+    const contractResultNumber = await db.select().from(contracts).where(and(eq(contracts.contractNumber, id), eq(contracts.tenantId, user.tenantId)));
+    contract = contractResultNumber[0];
   }
 
   if (!contract || contract.isDeleted === 1) {
@@ -32,18 +34,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // Find the specific receipt or the latest one
   let receipt;
   if (receiptId) {
-    receipt = db.select().from(receipts).where(and(eq(receipts.id, receiptId), eq(receipts.tenantId, user.tenantId))).get();
+    const receiptResult = await db.select().from(receipts).where(and(eq(receipts.id, receiptId), eq(receipts.tenantId, user.tenantId)));
+    receipt = receiptResult[0];
   } else {
-    receipt = db.select().from(receipts).where(and(eq(receipts.contractId, contract.id), eq(receipts.tenantId, user.tenantId))).orderBy(desc(receipts.createdAt)).get();
+    const receiptResult = await db.select().from(receipts).where(and(eq(receipts.contractId, contract.id), eq(receipts.tenantId, user.tenantId))).orderBy(desc(receipts.createdAt));
+    receipt = receiptResult[0];
   }
 
   if (!receipt) {
     return NextResponse.json({ error: { message: "Recibo no encontrado" } }, { status: 404 });
   }
 
-  const quotation = db.select().from(quotations).where(eq(quotations.id, contract.quotationId)).get();
-  const client = db.select().from(clients).where(eq(clients.id, quotation?.clientId || "")).get();
-  const company = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+  const quotationResult = await db.select().from(quotations).where(eq(quotations.id, contract.quotationId));
+  const quotation = quotationResult[0];
+  const clientResult = await db.select().from(clients).where(eq(clients.id, quotation?.clientId || ""));
+  const client = clientResult[0];
+  const companyResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+  const company = companyResult[0];
 
   const primaryColor = company?.primaryColor || "#1a1a2e";
   const receiptNumber = receipt.receiptNumber;

@@ -44,3 +44,7 @@ next-env.d.ts
 *.db
 *.db-shm
 *.db-wal
+
+# zips y tests
+*.zip
+testzip/

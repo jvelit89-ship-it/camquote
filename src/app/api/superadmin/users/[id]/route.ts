@@ -21,7 +21,7 @@ export async function PATCH(
     const { name, email, role, tenantId } = await req.json();
 
     const updateData: any = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (name) updateData.name = name;
@@ -29,7 +29,7 @@ export async function PATCH(
     if (role) updateData.role = role;
     if (tenantId !== undefined) updateData.tenantId = tenantId;
 
-    db.update(users).set(updateData).where(eq(users.id, id)).run();
+    await db.update(users).set(updateData).where(eq(users.id, id));
 
     return NextResponse.json({
       success: true,
@@ -67,7 +67,7 @@ export async function DELETE(
       );
     }
 
-    db.delete(users).where(eq(users.id, id)).run();
+    await db.delete(users).where(eq(users.id, id));
 
     return NextResponse.json({
       success: true,

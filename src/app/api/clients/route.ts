@@ -44,12 +44,13 @@ export async function GET(req: NextRequest) {
   const whereClause = and(...conditions);
 
   if (all) {
-    const data = db.select().from(clients).where(whereClause).orderBy(sql`${clients.name} ASC`).all();
+    const data = await db.select().from(clients).where(whereClause).orderBy(sql`${clients.name} ASC`);
     return NextResponse.json({ data });
   }
 
-  const data = db.select().from(clients).where(whereClause).orderBy(sql`${clients.createdAt} DESC`).limit(limit).offset(offset).all();
-  const total = db.select({ count: sql<number>`count(*)` }).from(clients).where(whereClause).get();
+  const data = await db.select().from(clients).where(whereClause).orderBy(sql`${clients.createdAt} DESC`).limit(limit).offset(offset);
+  const totalResult = await db.select({ count: sql<number>`count(*)` }).from(clients).where(whereClause);
+  const total = totalResult[0];
 
   return NextResponse.json({
     data,
@@ -74,20 +75,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const id = uuid();
 
-    db.insert(clients).values({
+    await db.insert(clients).values({
       id,
       tenantId: user.tenantId,
       ...parsed.data,
       isDeleted: 0,
       createdAt: now,
       updatedAt: now,
-    }).run();
+    } as any);
 
-    const created = db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId))).get();
-    return NextResponse.json({ data: created }, { status: 201 });
+    const createdResult = await db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId)));
+    return NextResponse.json({ data: createdResult[0] }, { status: 201 });
   } catch (err) {
     console.error("Create client error:", err);
     return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "Error interno" } }, { status: 500 });

@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Acceso denegado" } }, { status: 403 });
     }
 
-    const allPlans = db.select().from(plans).orderBy(desc(plans.price)).all();
+    const allPlans = await db.select().from(plans).orderBy(desc(plans.price));
 
     return NextResponse.json(
       { data: allPlans },
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: { message: "ID y Nombre son requeridos" } }, { status: 400 });
     }
 
-    db.insert(plans).values({
+    await db.insert(plans).values({
       id,
       name,
       price: Number(price) || 0,
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
       maxProducts: Number(maxProducts) || 20,
       maxQuotations: Number(maxQuotations) || 10,
       features: features ? JSON.stringify(features) : null,
-      updatedAt: new Date().toISOString(),
-    }).run();
+      updatedAt: new Date(),
+    }).execute();
 
     return NextResponse.json({ success: true, message: "Plan creado exitosamente" });
   } catch (err: any) {

@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { name, price, maxUsers, maxProducts, maxQuotations, features } = body;
 
     const updateData: any = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (name) updateData.name = name;
@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (maxQuotations !== undefined) updateData.maxQuotations = Number(maxQuotations);
     if (features !== undefined) updateData.features = JSON.stringify(features);
 
-    db.update(plans).set(updateData).where(eq(plans.id, id)).run();
+    await db.update(plans).set(updateData).where(eq(plans.id, id));
 
     return NextResponse.json({ success: true, message: "Plan actualizado correctamente" });
   } catch (err: any) {

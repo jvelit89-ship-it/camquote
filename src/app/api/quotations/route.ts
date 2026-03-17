@@ -39,12 +39,12 @@ export async function GET(req: NextRequest) {
   }
 
   if (status) conditions.push(eq(quotations.status, status));
-  if (dateFrom) conditions.push(gte(quotations.createdAt, dateFrom));
-  if (dateTo) conditions.push(lte(quotations.createdAt, dateTo + "T23:59:59Z"));
+  if (dateFrom) conditions.push(gte(quotations.createdAt, dateFrom as any));
+  if (dateTo) conditions.push(lte(quotations.createdAt, (dateTo + "T23:59:59Z") as any));
 
   const whereClause = and(...conditions);
 
-  const data = db
+  const data = await db
     .select({
       id: quotations.id,
       quotationNumber: quotations.quotationNumber,
@@ -65,15 +65,14 @@ export async function GET(req: NextRequest) {
     .where(whereClause)
     .orderBy(sql`${quotations.createdAt} DESC`)
     .limit(limit)
-    .offset(offset)
-    .all();
+    .offset(offset);
 
-  const total = db
+  const totalResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(quotations)
     .leftJoin(clients, eq(quotations.clientId, clients.id))
-    .where(whereClause)
-    .get();
+    .where(whereClause);
+  const total = totalResult[0];
 
   return NextResponse.json({
     data,
@@ -107,21 +106,21 @@ export async function POST(req: NextRequest) {
     }
 
     const { clientId, notes, terms, items } = parsed.data;
-    const now = new Date().toISOString();
     const quotationId = uuid();
     const quotationNumber = generateQuotationNumber();
 
     // Obtener tasa de IGV
-    const settings = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+    const settingsResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    const settings = settingsResult[0];
     const igvRate = settings?.igvRate ?? 0.18;
 
     // Calcular totales
-    const subtotal = roundTwo(items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0));
+    const subtotal = roundTwo(items.reduce((sum: number, item: any) => sum + item.quantity * item.unitPrice, 0));
     const igvAmount = roundTwo(subtotal * igvRate);
     const total = roundTwo(subtotal + igvAmount);
 
     // Insertar cotización
-    db.insert(quotations).values({
+    await db.insert(quotations).values({
       id: quotationId,
       tenantId: user.tenantId,
       quotationNumber,
@@ -134,24 +133,23 @@ export async function POST(req: NextRequest) {
       notes: notes || "",
       terms: terms || "",
       isDeleted: 0,
-      createdAt: now,
-      updatedAt: now,
-    }).run();
+    } as any);
 
     // Insertar items
-    items.forEach((item, index) => {
-      db.insert(quotationItems).values({
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      await db.insert(quotationItems).values({
         id: uuid(),
         quotationId,
-        productId: item.productId || null,
-        productName: item.productName,
-        productUnit: item.productUnit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal: roundTwo(item.quantity * item.unitPrice),
+        productId: (item as any).productId || null,
+        productName: (item as any).productName,
+        productUnit: (item as any).productUnit,
+        quantity: (item as any).quantity,
+        unitPrice: (item as any).unitPrice,
+        subtotal: roundTwo((item as any).quantity * (item as any).unitPrice),
         sortOrder: index,
-      }).run();
-    });
+      } as any);
+    }
 
     return NextResponse.json({ data: { id: quotationId, quotationNumber } }, { status: 201 });
   } catch (err) {

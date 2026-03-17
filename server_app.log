@@ -1,0 +1,39 @@
+▲ Next.js 16.1.6
+- Local:         http://127.0.0.1:3005
+- Network:       http://127.0.0.1:3005
+
+✓ Starting...
+✓ Ready in 229ms
+Create quotation error: TypeError: e.toISOString is not a function
+    at eP.mapToDriverValue (.next/server/chunks/_47f2a5c1._.js:1:35100)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:11258)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10479)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10540)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+Create quotation error: TypeError: e.toISOString is not a function
+    at eP.mapToDriverValue (.next/server/chunks/_47f2a5c1._.js:1:35100)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:11258)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10479)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10540)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+Create quotation error: TypeError: e.toISOString is not a function
+    at eP.mapToDriverValue (.next/server/chunks/_47f2a5c1._.js:1:35100)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:11258)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10479)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)
+    at <unknown> (.next/server/chunks/_47f2a5c1._.js:1:10540)
+    at Array.map (<anonymous>)
+    at R.buildQueryFromSourceParams (.next/server/chunks/_47f2a5c1._.js:1:10184)

@@ -1,0 +1,2 @@
+var/lib: YES
+tmp: YES

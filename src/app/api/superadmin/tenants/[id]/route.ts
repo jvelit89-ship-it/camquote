@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json();
     const { status, planId } = body;
 
-    const updateData: any = { updatedAt: new Date().toISOString() };
+    const updateData: any = { updatedAt: new Date() };
 
     if (status) {
       const validStatuses = ["active", "suspended", "cancelled"];
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       updateData.planId = planId;
     }
 
-    db.update(tenants).set(updateData).where(eq(tenants.id, id)).run();
+    await db.update(tenants).set(updateData).where(eq(tenants.id, id));
 
     return NextResponse.json({ success: true, message: "Tenant actualizado" });
   } catch (err: any) {
@@ -48,7 +48,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
 
     // Hard delete - Use con precaución
-    db.delete(tenants).where(eq(tenants.id, id)).run();
+    await db.delete(tenants).where(eq(tenants.id, id));
 
     return NextResponse.json({ success: true, message: "Tenant eliminado" });
   } catch (err: any) {

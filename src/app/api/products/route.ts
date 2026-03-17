@@ -44,12 +44,13 @@ export async function GET(req: NextRequest) {
   const whereClause = and(...conditions);
 
   if (all) {
-    const data = db.select().from(products).where(whereClause).orderBy(sql`${products.name} ASC`).all();
+    const data = await db.select().from(products).where(whereClause).orderBy(sql`${products.name} ASC`);
     return NextResponse.json({ data });
   }
 
-  const data = db.select().from(products).where(whereClause).orderBy(sql`${products.createdAt} DESC`).limit(limit).offset(offset).all();
-  const total = db.select({ count: sql<number>`count(*)` }).from(products).where(whereClause).get();
+  const data = await db.select().from(products).where(whereClause).orderBy(sql`${products.createdAt} DESC`).limit(limit).offset(offset);
+  const totalResult = await db.select({ count: sql<number>`count(*)` }).from(products).where(whereClause);
+  const total = totalResult[0];
 
   return NextResponse.json({
     data,
@@ -82,20 +83,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const id = uuid();
 
-    db.insert(products).values({
+    await db.insert(products).values({
       id,
       tenantId: user.tenantId,
       ...parsed.data,
       isDeleted: 0,
       createdAt: now,
       updatedAt: now,
-    }).run();
+    } as any);
 
-    const created = db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId))).get();
-    return NextResponse.json({ data: created }, { status: 201 });
+    const createdResult = await db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
+    return NextResponse.json({ data: createdResult[0] }, { status: 201 });
   } catch (err) {
     console.error("Create product error:", err);
     return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "Error interno" } }, { status: 500 });

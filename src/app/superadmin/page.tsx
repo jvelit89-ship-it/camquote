@@ -5,16 +5,16 @@ import { Building2, Users, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 async function getSuperadminStats() {
-  const totalTenants = db.select({ count: sql<number>`count(*)` }).from(tenants).get();
-  const activeTenants = db.select({ count: sql<number>`count(*)` }).from(tenants).where(sql`${tenants.status} = 'active'`).get();
-  const totalUsers = db.select({ count: sql<number>`count(*)` }).from(users).get();
-  const totalQuotations = db.select({ count: sql<number>`count(*)` }).from(quotations).get();
+  const totalTenantsResult = await db.select({ count: sql<number>`count(*)` }).from(tenants);
+  const activeTenantsResult = await db.select({ count: sql<number>`count(*)` }).from(tenants).where(sql`${tenants.status} = 'active'`);
+  const totalUsersResult = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const totalQuotationsResult = await db.select({ count: sql<number>`count(*)` }).from(quotations);
 
   return {
-    totalTenants: totalTenants?.count || 0,
-    activeTenants: activeTenants?.count || 0,
-    totalUsers: totalUsers?.count || 0,
-    totalQuotations: totalQuotations?.count || 0,
+    totalTenants: totalTenantsResult[0]?.count || 0,
+    activeTenants: activeTenantsResult[0]?.count || 0,
+    totalUsers: totalUsersResult[0]?.count || 0,
+    totalQuotations: totalQuotationsResult[0]?.count || 0,
   };
 }
 

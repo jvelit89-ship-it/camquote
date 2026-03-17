@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ showAds: true });
   }
 
-  const tenant = db.select().from(tenants).where(eq(tenants.id, user.tenantId)).get();
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId));
   const showAds = !tenant || tenant.planId === "free";
 
   return NextResponse.json({ showAds });

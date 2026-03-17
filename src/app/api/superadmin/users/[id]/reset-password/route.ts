@@ -21,10 +21,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     
-    db.update(users)
-      .set({ passwordHash, updatedAt: new Date().toISOString() })
-      .where(eq(users.id, id))
-      .run();
+    await db.update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, id));
 
     return NextResponse.json({ success: true, message: "Contraseña restablecida con éxito" });
   } catch (err: any) {

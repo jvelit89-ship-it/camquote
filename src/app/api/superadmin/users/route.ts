@@ -27,8 +27,7 @@ export async function GET(req: NextRequest) {
       .from(users)
       .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .orderBy(sql`${users.createdAt} DESC`)
-      .limit(limit)
-      .all();
+      .limit(limit);
 
     return NextResponse.json({ data: allUsers });
   } catch (err) {
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if email exists
-    const existing = db.select().from(users).where(eq(users.email, email)).get();
+    const [existing] = await db.select().from(users).where(eq(users.email, email));
     if (existing) {
       return NextResponse.json({ error: { message: "El correo ya está registrado" } }, { status: 400 });
     }
@@ -59,7 +58,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const id = crypto.randomUUID();
 
-    const now = new Date().toISOString();
+    const now = new Date();
     db.insert(users).values({
       id,
       name,
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
       tenantId: tenantId || null,
       createdAt: now,
       updatedAt: now,
-    }).run();
+    }).execute();
 
     return NextResponse.json({ success: true, data: { id } });
   } catch (err) {

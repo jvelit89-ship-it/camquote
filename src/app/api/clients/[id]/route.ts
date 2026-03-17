@@ -14,7 +14,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const client = db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId), eq(clients.isDeleted, 0))).get();
+  const clientResult = await db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId), eq(clients.isDeleted, 0)));
+  const client = clientResult[0];
 
   if (!client) {
     return NextResponse.json({ error: { code: "NOT_FOUND", message: "Cliente no encontrado" } }, { status: 404 });
@@ -41,10 +42,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       );
     }
 
-    db.update(clients).set({ ...parsed.data, updatedAt: new Date().toISOString() }).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId))).run();
-    const updated = db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId))).get();
+    await db.update(clients).set({ ...parsed.data, updatedAt: new Date() }).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId)));
+    const updatedResult = await db.select().from(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId)));
 
-    return NextResponse.json({ data: updated });
+    return NextResponse.json({ data: updatedResult[0] });
   } catch (err) {
     console.error("Update client error:", err);
     return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "Error interno" } }, { status: 500 });
@@ -60,13 +61,14 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   // Verificar si tiene cotizaciones activas
-  const hasQuotations = db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.clientId, id), eq(quotations.tenantId, user.tenantId), eq(quotations.isDeleted, 0))).get();
+  const hasQuotationsResult = await db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.clientId, id), eq(quotations.tenantId, user.tenantId), eq(quotations.isDeleted, 0)));
+  const hasQuotations = hasQuotationsResult[0];
 
   if (hasQuotations && hasQuotations.count > 0) {
     // Soft delete si tiene cotizaciones
-    db.update(clients).set({ isDeleted: 1, updatedAt: new Date().toISOString() }).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId))).run();
+    await db.update(clients).set({ isDeleted: 1, updatedAt: new Date() }).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId)));
   } else {
-    db.delete(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId))).run();
+    await db.delete(clients).where(and(eq(clients.id, id), eq(clients.tenantId, user.tenantId)));
   }
 
   return NextResponse.json({ success: true });

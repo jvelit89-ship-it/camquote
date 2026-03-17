@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
     const { name, email, password, companyName, ruc } = parsed.data;
 
     // 1. Verificar si el correo ya existe
-    const existingUser = db.select().from(users).where(eq(users.email, email)).get();
-    if (existingUser) {
+    const existingUserResult = await db.select().from(users).where(eq(users.email, email));
+    if (existingUserResult[0]) {
       return NextResponse.json(
         { error: { code: "EMAIL_EXISTS", message: "El correo electrónico ya está registrado" } },
         { status: 409 }
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Verificar si la empresa ya existe
-    const existingTenant = db.select().from(tenants).where(eq(tenants.companyName, companyName)).get();
-    if (existingTenant) {
+    const existingTenantResult = await db.select().from(tenants).where(eq(tenants.companyName, companyName));
+    if (existingTenantResult[0]) {
       return NextResponse.json(
         { error: { code: "COMPANY_EXISTS", message: "Este nombre de empresa ya se encuentra registrado" } },
         { status: 409 }
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Verificar si el RUC ya existe
-    const existingRuc = db.select().from(companySettings).where(eq(companySettings.ruc, ruc)).get();
-    if (existingRuc) {
+    const existingRucResult = await db.select().from(companySettings).where(eq(companySettings.ruc, ruc));
+    if (existingRucResult[0]) {
       return NextResponse.json(
         { error: { code: "RUC_EXISTS", message: "Este RUC ya se encuentra registrado por otra empresa" } },
         { status: 409 }
@@ -57,11 +57,11 @@ export async function POST(req: NextRequest) {
 
     const tenantId = uuid();
     const userId = uuid();
-    const now = new Date().toISOString();
+    const now = new Date();
 
-    db.transaction(() => {
+    await db.transaction(async (tx: any) => {
       // 1. Crear el Tenant
-      db.insert(tenants).values({
+      await tx.insert(tenants).values({
         id: tenantId,
         companyName: companyName,
         ownerUserId: userId,
@@ -69,10 +69,10 @@ export async function POST(req: NextRequest) {
         status: "active",
         createdAt: now,
         updatedAt: now,
-      }).run();
+      } as any);
 
       // 2. Crear el Usuario Admin asociado al Tenant
-      db.insert(users).values({
+      await tx.insert(users).values({
         id: userId,
         tenantId: tenantId,
         email,
@@ -81,10 +81,10 @@ export async function POST(req: NextRequest) {
         role: "admin",
         createdAt: now,
         updatedAt: now,
-      }).run();
+      } as any);
 
       // 3. Crear configuraciones base para la empresa
-      db.insert(companySettings).values({
+      await tx.insert(companySettings).values({
         id: uuid(),
         tenantId: tenantId,
         name: companyName,
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         primaryColor: "#2563eb", // blue-600
         secondaryColor: "#475569", // slate-600
         updatedAt: now,
-      }).run();
+      } as any);
     });
 
     return NextResponse.json({ success: true, message: "Cuenta creada exitosamente" }, { status: 201 });

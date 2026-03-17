@@ -14,10 +14,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params; // contractId
 
-  const data = db.select().from(receipts)
+  const data = await db.select().from(receipts)
     .where(and(eq(receipts.contractId, id), eq(receipts.tenantId, user.tenantId)))
-    .orderBy(desc(receipts.createdAt))
-    .all();
+    .orderBy(desc(receipts.createdAt));
 
   return NextResponse.json({ data });
 }
@@ -36,7 +35,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: { message: "Monto inválido" } }, { status: 400 });
   }
 
-  const contract = db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.tenantId, user.tenantId))).get();
+  const contractResult = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.tenantId, user.tenantId)));
+  const contract = contractResult[0];
   if (!contract) {
     return NextResponse.json({ error: { message: "Contrato no encontrado" } }, { status: 404 });
   }
@@ -51,11 +51,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     receiptNumber,
     amount: Number(amount),
     concept: concept || "Pago",
-    date: date || new Date().toISOString(),
-    createdAt: new Date().toISOString()
+    date: date || new Date(),
+    createdAt: new Date()
   };
 
-  db.insert(receipts).values(newReceipt).run();
+  await db.insert(receipts).values(newReceipt as any);
 
   return NextResponse.json({ data: newReceipt });
 }

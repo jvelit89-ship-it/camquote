@@ -19,7 +19,7 @@ export async function POST(
 
     const { id } = await params;
 
-    const userToImpersonate = db.select().from(users).where(eq(users.id, id)).get();
+    const [userToImpersonate] = await db.select().from(users).where(eq(users.id, id));
 
     if (!userToImpersonate) {
       return NextResponse.json(

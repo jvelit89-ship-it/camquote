@@ -17,13 +17,22 @@ import { AdBanner } from "@/components/ads/AdBanner";
 import { SubscriptionUsage } from "@/components/SubscriptionUsage";
 
 async function getStats(tenantId: string) {
-  const totalQuotations = db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId))).get();
-  const approvedQuotations = db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.status, "approved"), eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId))).get();
-  const totalAmount = db.select({ sum: sql<number>`coalesce(sum(total), 0)` }).from(quotations).where(and(eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId))).get();
-  const totalClients = db.select({ count: sql<number>`count(*)` }).from(clients).where(and(eq(clients.isDeleted, 0), eq(clients.tenantId, tenantId))).get();
-  const totalProducts = db.select({ count: sql<number>`count(*)` }).from(products).where(and(eq(products.isDeleted, 0), eq(products.tenantId, tenantId))).get();
+  const totalQuotationsResult = await db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId)));
+  const totalQuotations = totalQuotationsResult[0];
 
-  const recentQuotations = db
+  const approvedQuotationsResult = await db.select({ count: sql<number>`count(*)` }).from(quotations).where(and(eq(quotations.status, "approved"), eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId)));
+  const approvedQuotations = approvedQuotationsResult[0];
+
+  const totalAmountResult = await db.select({ sum: sql<number>`coalesce(sum(total), 0)` }).from(quotations).where(and(eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId)));
+  const totalAmount = totalAmountResult[0];
+
+  const totalClientsResult = await db.select({ count: sql<number>`count(*)` }).from(clients).where(and(eq(clients.isDeleted, 0), eq(clients.tenantId, tenantId)));
+  const totalClients = totalClientsResult[0];
+
+  const totalProductsResult = await db.select({ count: sql<number>`count(*)` }).from(products).where(and(eq(products.isDeleted, 0), eq(products.tenantId, tenantId)));
+  const totalProducts = totalProductsResult[0];
+
+  const recentQuotations = await db
     .select({
       id: quotations.id,
       quotationNumber: quotations.quotationNumber,
@@ -36,8 +45,7 @@ async function getStats(tenantId: string) {
     .leftJoin(clients, eq(quotations.clientId, clients.id))
     .where(and(eq(quotations.isDeleted, 0), eq(quotations.tenantId, tenantId)))
     .orderBy(sql`${quotations.createdAt} DESC`)
-    .limit(5)
-    .all();
+    .limit(5);
 
   return {
     totalQuotations: totalQuotations?.count || 0,

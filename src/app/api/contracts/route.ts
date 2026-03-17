@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: { message: "No autenticado" } }, { status: 401 });
   }
 
-  const data = db
+  const data = await db
     .select({
       id: contracts.id,
       contractNumber: contracts.contractNumber,
@@ -25,8 +25,7 @@ export async function GET(req: NextRequest) {
     .innerJoin(quotations, eq(contracts.quotationId, quotations.id))
     .innerJoin(clients, eq(quotations.clientId, clients.id))
     .where(and(eq(contracts.tenantId, user.tenantId), eq(contracts.isDeleted, 0)))
-    .orderBy(desc(contracts.createdAt))
-    .all();
+    .orderBy(desc(contracts.createdAt));
 
   return NextResponse.json({ data });
 }

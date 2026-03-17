@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password } = parsed.data;
-    const user = db.select().from(users).where(eq(users.email, email)).get();
+    const [user] = await db.select().from(users).where(eq(users.email, email));
 
     if (!user || !compareSync(password, user.passwordHash)) {
       return NextResponse.json(

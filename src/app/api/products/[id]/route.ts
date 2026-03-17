@@ -14,7 +14,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const product = db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId))).get();
+  const productResult = await db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
+  const product = productResult[0];
 
   if (!product || product.isDeleted === 1) {
     return NextResponse.json({ error: { code: "NOT_FOUND", message: "Producto no encontrado" } }, { status: 404 });
@@ -41,9 +42,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       );
     }
 
-    db.update(products).set({ ...parsed.data, updatedAt: new Date().toISOString() }).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId))).run();
-    const updated = db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId))).get();
-    return NextResponse.json({ data: updated });
+    await db.update(products).set({ ...parsed.data, updatedAt: new Date() }).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
+    const updatedResult = await db.select().from(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
+    return NextResponse.json({ data: updatedResult[0] });
   } catch (err) {
     console.error("Update product error:", err);
     return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "Error interno" } }, { status: 500 });
@@ -57,6 +58,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { id } = await params;
-  db.update(products).set({ isDeleted: 1, updatedAt: new Date().toISOString() }).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId))).run();
+  await db.update(products).set({ isDeleted: 1, updatedAt: new Date() }).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
   return NextResponse.json({ success: true });
 }

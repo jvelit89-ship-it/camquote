@@ -15,8 +15,8 @@ const globalForDb = globalThis as unknown as { db: any };
 
 async function getDb() {
   if (!globalForDb.db) {
-    const conn = await mysql.createConnection(connectionString!);
-    globalForDb.db = drizzle(conn, { schema, mode: "default" });
+    const pool = mysql.createPool(connectionString!);
+    globalForDb.db = drizzle(pool, { schema, mode: "default" });
   }
   return globalForDb.db;
 }

@@ -13,11 +13,13 @@ export interface PlanLimits {
 // }
 
 export async function getTenantLimits(tenantId: string): Promise<PlanLimits> {
-  const tenant = db.select({ planId: tenants.planId }).from(tenants).where(eq(tenants.id, tenantId)).get();
+  const tenantResult = await db.select({ planId: tenants.planId }).from(tenants).where(eq(tenants.id, tenantId));
+  const tenant = tenantResult[0];
   
   if (!tenant) throw new Error("Tenant not found");
 
-  const plan = db.select().from(plans).where(eq(plans.id, tenant.planId)).get();
+  const planResult = await db.select().from(plans).where(eq(plans.id, tenant.planId));
+  const plan = planResult[0];
   
   let baseLimits = { maxUsers: 1, maxProducts: 20, maxQuotations: 10 };
   if (plan) {
@@ -34,17 +36,17 @@ export async function getTenantLimits(tenantId: string): Promise<PlanLimits> {
 
   // Get purchases
   const { tenantPurchases } = await import("@/db/schema");
-  const purchases = db.select().from(tenantPurchases).where(eq(tenantPurchases.tenantId, tenantId)).all();
+  const purchases: any[] = await db.select().from(tenantPurchases).where(eq(tenantPurchases.tenantId, tenantId));
 
   // Sum extra products (perpetual)
   const extraProducts = purchases
-    .filter(p => p.type === "products" && p.isPerpetual === 1)
-    .reduce((sum, p) => sum + p.quantity, 0);
+    .filter((p: any) => p.type === "products" && p.isPerpetual === 1)
+    .reduce((sum: number, p: any) => sum + p.quantity, 0);
 
   // Sum extra quotations (only for current month)
   const extraQuotations = purchases
-    .filter(p => p.type === "quotations" && p.purchaseMonth === currentMonth)
-    .reduce((sum, p) => sum + p.quantity, 0);
+    .filter((p: any) => p.type === "quotations" && p.purchaseMonth === currentMonth)
+    .reduce((sum: number, p: any) => sum + p.quantity, 0);
 
   return {
     maxUsers: baseLimits.maxUsers,
@@ -55,15 +57,17 @@ export async function getTenantLimits(tenantId: string): Promise<PlanLimits> {
 
 export async function checkUserLimit(tenantId: string): Promise<boolean> {
   const limits = await getTenantLimits(tenantId);
-  const current = db.select({ value: count() }).from(users).where(eq(users.tenantId, tenantId)).get();
+  const currentResult = await db.select({ value: count() }).from(users).where(eq(users.tenantId, tenantId));
+  const current = currentResult[0];
   return (current?.value || 0) < limits.maxUsers;
 }
 
 export async function checkProductLimit(tenantId: string): Promise<boolean> {
   const limits = await getTenantLimits(tenantId);
-  const current = db.select({ value: count() }).from(products).where(
+  const currentResult = await db.select({ value: count() }).from(products).where(
     and(eq(products.tenantId, tenantId), eq(products.isDeleted, 0))
-  ).get();
+  );
+  const current = currentResult[0];
   return (current?.value || 0) < limits.maxProducts;
 }
 
@@ -75,13 +79,14 @@ export async function checkQuotationLimit(tenantId: string): Promise<boolean> {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const current = db.select({ value: count() }).from(quotations).where(
+  const currentResult = await db.select({ value: count() }).from(quotations).where(
     and(
       eq(quotations.tenantId, tenantId), 
       eq(quotations.isDeleted, 0),
-      gte(quotations.createdAt, startOfMonth.toISOString())
+      gte(quotations.createdAt, startOfMonth as any)
     )
-  ).get();
+  );
+  const current = currentResult[0];
 
   return (current?.value || 0) < limits.maxQuotations;
 }

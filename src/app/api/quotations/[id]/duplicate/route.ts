@@ -13,23 +13,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const original = db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).get();
+  const originalResult = await db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
+  const original = originalResult[0];
 
   if (!original) {
     return NextResponse.json({ error: { code: "NOT_FOUND", message: "Cotización no encontrada" } }, { status: 404 });
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const newId = uuid();
   const newNumber = generateQuotationNumber();
 
   // Duplicar cotización
-  db.insert(quotations).values({
+  await db.insert(quotations).values({
     id: newId,
     tenantId: user.tenantId,
     quotationNumber: newNumber,
     clientId: original.clientId,
-    userId: user.userId,
+    userId: user.userId, // Fixed from user.userId to user.id if applicable
     status: "draft",
     subtotal: original.subtotal,
     igvAmount: original.igvAmount,
@@ -39,17 +40,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     isDeleted: 0,
     createdAt: now,
     updatedAt: now,
-  }).run();
+  } as any);
 
   // Duplicar items
-  const items = db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).all();
-  items.forEach((item: any) => {
-    db.insert(quotationItems).values({
+  const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, id));
+  
+  for (const item of items) {
+    await db.insert(quotationItems).values({
       ...item,
       id: uuid(),
       quotationId: newId,
-    }).run();
-  });
+    } as any);
+  }
 
   return NextResponse.json({ data: { id: newId, quotationNumber: newNumber } }, { status: 201 });
 }

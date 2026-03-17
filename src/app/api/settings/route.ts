@@ -13,18 +13,19 @@ export async function GET() {
     return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "No autenticado" } }, { status: 401 });
   }
 
-  const settings = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+  const settingsResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+  const settings = settingsResult[0];
   if (!settings) {
     // Crear registro por defecto si no existe para este tenant
-    db.insert(companySettings).values({
+    await db.insert(companySettings).values({
       id: uuid(),
       tenantId: user.tenantId,
       name: "Mi Empresa",
       igvRate: 0.18,
-      updatedAt: new Date().toISOString(),
-    }).run();
-    const created = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
-    return NextResponse.json({ data: created });
+      updatedAt: new Date(),
+    } as any);
+    const createdResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    return NextResponse.json({ data: createdResult[0] });
   }
   return NextResponse.json({ data: settings });
 }
@@ -46,28 +47,29 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const settings = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+    const settingsResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    const settings = settingsResult[0];
 
     if (settings) {
-      db.update(companySettings).set({
+      await db.update(companySettings).set({
         ...parsed.data,
         logo: body.logo,
         primaryColor: body.primaryColor,
         secondaryColor: body.secondaryColor,
         igvRate: body.igvRate,
-        updatedAt: new Date().toISOString(),
-      }).where(eq(companySettings.tenantId, user.tenantId)).run();
+        updatedAt: new Date(),
+      }).where(eq(companySettings.tenantId, user.tenantId));
     } else {
-      db.insert(companySettings).values({
+      await db.insert(companySettings).values({
         id: uuid(),
         tenantId: user.tenantId,
         ...parsed.data,
-        updatedAt: new Date().toISOString(),
-      }).run();
+        updatedAt: new Date(),
+      } as any);
     }
 
-    const updated = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
-    return NextResponse.json({ data: updated });
+    const updatedResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    return NextResponse.json({ data: updatedResult[0] });
   } catch (err) {
     console.error("Update settings error:", err);
     return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "Error interno" } }, { status: 500 });

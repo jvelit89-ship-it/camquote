@@ -15,15 +15,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const quotation = db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).get();
+  const quotationResult = await db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
+  const quotation = quotationResult[0];
 
   if (!quotation || quotation.isDeleted === 1) {
     return NextResponse.json({ error: { code: "NOT_FOUND", message: "Cotización no encontrada" } }, { status: 404 });
   }
 
-  const items = db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).orderBy(quotationItems.sortOrder).all();
-  const client = db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId))).get();
-  const settings = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+  const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).orderBy(quotationItems.sortOrder);
+  const clientResult = await db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId)));
+  const client = clientResult[0];
+  const settingsResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+  const settings = settingsResult[0];
 
   return NextResponse.json({ data: { ...quotation, items, client, company: settings } });
 }
@@ -47,16 +50,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const { clientId, notes, terms, items } = parsed.data;
-    const now = new Date().toISOString();
+    const now = new Date();
 
-    const settings = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+    const settingsResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+    const settings = settingsResult[0];
     const igvRate = settings?.igvRate ?? 0.18;
 
-    const subtotal = roundTwo(items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0));
+    const subtotal = roundTwo(items.reduce((sum: number, item: any) => sum + item.quantity * item.unitPrice, 0));
     const igvAmount = roundTwo(subtotal * igvRate);
     const total = roundTwo(subtotal + igvAmount);
 
-    db.update(quotations).set({
+    await db.update(quotations).set({
       clientId,
       subtotal,
       igvAmount,
@@ -64,24 +68,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       notes: notes || "",
       terms: terms || "",
       updatedAt: now,
-    }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).run();
+    }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
 
     // Reemplazar items: eliminar existentes e insertar nuevos
-    db.delete(quotationItems).where(eq(quotationItems.quotationId, id)).run();
+    await db.delete(quotationItems).where(eq(quotationItems.quotationId, id));
 
-    items.forEach((item, index) => {
-      db.insert(quotationItems).values({
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      await db.insert(quotationItems).values({
         id: uuid(),
         quotationId: id,
-        productId: item.productId || null,
-        productName: item.productName,
-        productUnit: item.productUnit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal: roundTwo(item.quantity * item.unitPrice),
+        productId: (item as any).productId || null,
+        productName: (item as any).productName,
+        productUnit: (item as any).productUnit,
+        quantity: (item as any).quantity,
+        unitPrice: (item as any).unitPrice,
+        subtotal: roundTwo((item as any).quantity * (item as any).unitPrice),
         sortOrder: index,
-      }).run();
-    });
+      } as any);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -97,6 +102,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { id } = await params;
-  db.update(quotations).set({ isDeleted: 1, updatedAt: new Date().toISOString() }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).run();
+  await db.update(quotations).set({ isDeleted: 1, updatedAt: new Date() }).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
   return NextResponse.json({ success: true });
 }

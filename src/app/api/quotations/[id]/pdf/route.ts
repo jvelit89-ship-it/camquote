@@ -20,14 +20,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
 
-  const quotation = db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId))).get();
+  const quotationResult = await db.select().from(quotations).where(and(eq(quotations.id, id), eq(quotations.tenantId, user.tenantId)));
+  const quotation = quotationResult[0];
   if (!quotation || quotation.isDeleted === 1) {
     return NextResponse.json({ error: { message: "No encontrada" } }, { status: 404 });
   }
 
-  const items = db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).orderBy(quotationItems.sortOrder).all();
-  const client = db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId))).get();
-  const company = db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId)).get();
+  const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, id)).orderBy(quotationItems.sortOrder);
+  const clientResult = await db.select().from(clients).where(and(eq(clients.id, quotation.clientId), eq(clients.tenantId, user.tenantId)));
+  const client = clientResult[0];
+  const companyResult = await db.select().from(companySettings).where(eq(companySettings.tenantId, user.tenantId));
+  const company = companyResult[0];
 
   const primaryColor = company?.primaryColor || "#1a1a2e";
   const secondaryColor = company?.secondaryColor || "#6b7280";
@@ -127,7 +130,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             </tr>
           </thead>
           <tbody>
-            ${items.map((item, i) => `
+            ${items.map((item: any, i: number) => `
               <tr>
                 <td>${i + 1}</td>
                 <td>${item.productName}</td>

@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: { message: "No autorizado" } }, { status: 403 });
   }
 
-  const settings = db.select().from(globalSettings).where(eq(globalSettings.id, "current")).get();
+  const [settings] = await db.select().from(globalSettings).where(eq(globalSettings.id, "current"));
   return NextResponse.json(settings || { googleAdsenseId: "" });
 }
 
@@ -24,19 +24,17 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { googleAdsenseId } = body;
 
-    const now = new Date().toISOString();
+    const now = new Date();
     
-    const existing = db.select().from(globalSettings).where(eq(globalSettings.id, "current")).get();
+    const [existing] = await db.select().from(globalSettings).where(eq(globalSettings.id, "current"));
 
     if (existing) {
-      db.update(globalSettings)
+      await db.update(globalSettings)
         .set({ googleAdsenseId, updatedAt: now })
-        .where(eq(globalSettings.id, "current"))
-        .run();
+        .where(eq(globalSettings.id, "current"));
     } else {
-      db.insert(globalSettings)
-        .values({ id: "current", googleAdsenseId, updatedAt: now })
-        .run();
+      await db.insert(globalSettings)
+        .values({ id: "current", googleAdsenseId, updatedAt: now });
     }
 
     return NextResponse.json({ success: true });
