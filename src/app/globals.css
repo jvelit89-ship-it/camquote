@@ -357,3 +357,29 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Wizard Option Button (Missing CSS) */
+.wizard-option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: white;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.wizard-option-btn:hover {
+  border-color: var(--accent-primary);
+  background: var(--accent-blue-soft);
+  color: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}

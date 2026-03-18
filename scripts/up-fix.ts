@@ -1,0 +1,1 @@
+import * as ftp from 'basic-ftp'; import * as fs from 'fs'; async function up() { const client = new ftp.Client(); try { await client.access({ host: 'ftp.camquote.cc', user: 'antigravity@camquote.cc', password: 'Related123@', secure: false }); await client.cd('public_html'); await client.uploadFrom('scripts/fix-static.php', 'fix-static.php'); } finally { client.close(); } } up();
